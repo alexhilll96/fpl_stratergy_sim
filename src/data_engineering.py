@@ -13,7 +13,12 @@ import warnings
 # trying to get the rolling average to work
 def movingSum(df: pd.DataFrame, col):
     df = df.sort_values(by=['player_id', 'gameweek_id'])
-    df[col + '_moving_avg'] = df.groupby(['player_id'])[col].expanding().sum().reset_index(level=0, drop=True)
+    df[col + '_moving_sum'] = df.groupby(['player_id'])[col].expanding().sum().reset_index(level=0, drop=True)
+    return df
+
+def rollingAvg(df: pd.DataFrame, col, n):
+    df = df.sort_values(by=['player_id', 'gameweek_id'])
+    df[col + '_' + str(n) + '_rolling_avg'] = df.groupby(['player_id'])[col].rolling(window=n, min_periods=1).mean().reset_index(level=0, drop=True)
     return df
 
 # setup the database password as var
@@ -97,7 +102,8 @@ for database in databases:
 
 
 player_gw_df = movingSum(player_gw_df, 'points')
-player_gw_df['points_per_million'] = player_gw_df['points_moving_avg'] / player_gw_df['current_price']
+player_gw_df = rollingAvg(player_gw_df, 'points', 3)
+player_gw_df['points_per_million'] = player_gw_df['points_moving_sum'] / player_gw_df['current_price']
 
 output_file = Path(r'C:\Users\alexh\python_projects\fpl_stratergy_sim\data\strategy_data.csv')
 # output_file.mkdir(exist_ok=True, parents=True)
