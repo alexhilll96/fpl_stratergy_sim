@@ -6,6 +6,7 @@ class Strategy:
     def __init__(self, players_data, fixture_data):
         self.players_data = players_data
         self.fixture_data = fixture_data
+        self.gw = 1
         self.team = [] # your current team
         # self.bank = 1000 # starting budget
         self.transfers_used = []
@@ -29,8 +30,8 @@ class Strategy:
         self.select_initial_team()
         for gw in range(1, gws + 1):
             self.make_transfers(gw)
-            self.choose_captain()
-            self.play_gameweek()
+            # self.choose_captain()
+            # self.play_gameweek()
 
 ############# Strategy 1 - Value-based selection (Points per million) #############
 
@@ -44,13 +45,13 @@ class FormStrategy(Strategy):
         # fill rest of positions
         for pos in positions: 
             if pos == 'GKP':
-                slots = 0
+                slots = 1
             elif pos == 'DEF':
                 slots = 3
             elif  pos == 'MID':
-                slots = 3
+                slots = 5
             elif pos == 'FWD':
-                slots = 1 
+                slots = 2 
             
             for i in range(slots):
                 pos_series = self.players_data[(self.players_data['position'] == pos) & (self.players_data['gameweek_id'] == 1)]
@@ -58,6 +59,7 @@ class FormStrategy(Strategy):
                 player_series = pos_series.sort_values(by=['form'], ascending=False).iloc[0]
                 player_id = player_series['player_id']
                 team.append(player_id)
+        self.team = team
 
     # identify players with the lowest PPM, and replace them with with players with the highest PPM within budget. 
     def make_transfers(self, gw):
@@ -68,13 +70,15 @@ class FormStrategy(Strategy):
         out_player = my_player_series.sort_values(by=['form'], ascending=True).iloc[0]
         out_player_id = out_player['player_id']
         pos = out_player['position']
-        pos_player = all_player_series[all_player_series['position'].isin(pos)]
+        pos_player = all_player_series[all_player_series['position'].isin([pos])]
         in_player = pos_player.sort_values(by=['form'], ascending=False).iloc[0]
         in_player_id = in_player['player_id']
         team.remove(out_player_id)
         team.append(in_player_id)
 
-        print('Gameweek:' + gw + ' ' + 'Team: ' + team)
+        print('Gameweek:' + str(gw) + ' ' + 'Team: ' + str(team))
+        self.gw= gw + 1
+        self.team = team
 
 ############ Strategy 2 - Form-based (Recent points or xG/xA) #############
 
